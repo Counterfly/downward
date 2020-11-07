@@ -41,6 +41,17 @@ successor_generator::SuccessorGenerator &get_successor_generator(const TaskProxy
     return successor_generator;
 }
 
+std::string search_status::getStringFromSearchStatus(SearchStatus s) {
+        switch(s)
+        {
+            case IN_PROGRESS: return "IN PROGRESS";
+            case TIMEOUT: return "TIMEOUT";
+            case FAILED: return "FAILED";
+            case SOLVED: return "SOLVED";
+            default: throw s;
+        }
+    }
+
 SearchEngine::SearchEngine(const Options &opts)
     : status(IN_PROGRESS),
       solution_found(false),

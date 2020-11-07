@@ -11,6 +11,9 @@
 #include "task_proxy.h"
 
 #include <vector>
+#include <string>
+
+
 
 namespace options {
 class OptionParser;
@@ -31,12 +34,15 @@ enum class Verbosity;
 }
 
 enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED};
+namespace search_status {
+    std::string getStringFromSearchStatus(SearchStatus s);
+}
 
 class SearchEngine {
+protected:
     SearchStatus status;
     bool solution_found;
     Plan plan;
-protected:
     // Hold a reference to the task implementation and pass it to objects that need it.
     const std::shared_ptr<AbstractTask> task;
     // Use task_proxy to access task information.
@@ -58,7 +64,7 @@ protected:
     virtual SearchStatus step() = 0;
 
     void set_plan(const Plan &plan);
-    bool check_goal_and_set_plan(const GlobalState &state);
+    virtual bool check_goal_and_set_plan(const GlobalState &state);
     int get_adjusted_cost(const OperatorProxy &op) const;
 public:
     SearchEngine(const options::Options &opts);
@@ -68,7 +74,7 @@ public:
     bool found_solution() const;
     SearchStatus get_status() const;
     const Plan &get_plan() const;
-    void search();
+    virtual void search();
     const SearchStatistics &get_statistics() const {return statistics;}
     void set_bound(int b) {bound = b;}
     int get_bound() {return bound;}

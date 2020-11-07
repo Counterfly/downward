@@ -70,6 +70,7 @@ fast_downward_plugin(
         plan_manager
         plugin
         pruning_method
+        restart_strategy
         search_engine
         search_node_info
         search_progress
@@ -769,6 +770,52 @@ fast_downward_plugin(
         algorithms/sccs
     DEPENDENCY_ONLY
 )
+
+
+####### MINE #########
+#fast_downward_plugin(
+#    NAME RESTART_STRATEGY
+#    HELP "restarts"
+#    SOURCES heuristics/restart_strategy
+#    DEPENDENCY_ONLY
+#)
+
+fast_downward_plugin(
+    NAME EXP_RESTART_STRATEGY
+    HELP "exponential restarts"
+    SOURCES restart_strategies/exponential_restart_strategy
+)
+
+fast_downward_plugin(
+    NAME LUBY_RESTART_STRATEGY
+    HELP "luby restarts"
+    SOURCES restart_strategies/luby_restart_strategy
+)
+
+fast_downward_plugin(
+    NAME SINGLE_RW
+    HELP "Single RW"
+    SOURCES
+        search_engines/pure_rw
+    DEPENDS G_EVALUATOR
+)
+
+fast_downward_plugin(
+    NAME RRW_FIXED_PROB
+    HELP "RRW with fixed prob Restarts"
+    SOURCES
+        search_engines/pure_rrw_fixed_probability
+    DEPENDS EVALUATORS_PLUGIN_GROUP RESTART_STRATEGY
+)
+
+fast_downward_plugin(
+    NAME RRW_SCALED
+    HELP "RRW with Scaled Restarts"
+    SOURCES
+        search_engines/pure_rrw_scaled
+    DEPENDS EVALUATORS_PLUGIN_GROUP EXP_RESTART_STRATEGY LUBY_RESTART_STRATEGY
+)
+####### MINE #########
 
 fast_downward_add_plugin_sources(PLANNER_SOURCES)
 
