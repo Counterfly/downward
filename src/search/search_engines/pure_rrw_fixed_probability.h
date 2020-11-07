@@ -87,7 +87,6 @@ namespace pure_rrw_fp {
 
         utils::CountdownTimer* timer;
     protected:
-        // rng is not used, should be replaced with a seed value
         std::shared_ptr<utils::RandomNumberGenerator> rng;
         virtual void initialize() override;
         virtual SearchStatus step() override;

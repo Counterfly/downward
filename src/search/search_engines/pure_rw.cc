@@ -13,13 +13,7 @@
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
-#include <algorithm>  // for random_shuffle
-#include <cstdint>
-#include "stdio.h"	// for NULL
-#include "stdlib.h" // for rand() and srand
-#include "time.h"	// for time
 
-#include <sys/time.h>
 #define UNUSED(expr) do { (void)(expr); } while (0)
 using namespace std;
 
@@ -31,15 +25,6 @@ PureRW::PureRW(
       current_eval_context(state_registry.get_initial_state(), &statistics),
       last_num_expanded(-1),
       rng(utils::parse_rng_from_options(opts)) {
-	// else prefusage == DO_NOTHING
-    struct timeval time;
-	gettimeofday(&time,NULL);
-
-	// microsecond has 1 000 000
-	// Assuming you did not need quite that accuracy
-	// Also do not assume the system clock has that accuracy.
-	unsigned int seed = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-	srand(seed);
 
 	utils::g_log << "----" << endl;
 	utils::g_log << "--------" << endl;
@@ -48,7 +33,7 @@ PureRW::PureRW(
 	utils::g_log << "----------------" << endl;
 	utils::g_log << "--------" << endl;
 	utils::g_log << "----" << endl;
-	utils::g_log << "srand-SEED: " << seed << endl;
+	utils::g_log << "rng-random_seed: " << opts.get<int>("random_seed") << endl;
 }
 
 PureRW::~PureRW() {
@@ -88,8 +73,7 @@ vector<OperatorID> PureRW::get_successors(
     statistics.inc_expanded();
     statistics.inc_generated_ops(ops.size());
     // Randomize ops
-    std::random_shuffle(ops.begin(), ops.end());
-	// ops.shuffle(*rng);
+	rng->shuffle(ops);
     return ops;
 }
 
@@ -104,8 +88,7 @@ vector<OperatorID> PureRW::get_biased_successors(
     statistics.inc_generated_ops(ops.size());
 
     // Randomize ops
-    std::random_shuffle(ops.begin(), ops.end());
-	// ops.shuffle(*rng);
+    rng->shuffle(ops);
     return ops;
 }
 

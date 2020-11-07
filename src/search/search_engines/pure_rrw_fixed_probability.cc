@@ -14,13 +14,7 @@
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
-#include <algorithm>  // for random_shuffle
-#include <cstdint>
-#include "stdio.h"	// for NULL
-#include "stdlib.h" // for rand() and srand
-#include "time.h"	// for time
 
-#include <sys/time.h>
 #define UNUSED(expr) do { (void)(expr); } while (0)
 using namespace std;
 
@@ -39,19 +33,15 @@ namespace pure_rrw_fp {
 		plan(),
 		last_num_expanded(-1),
       	rng(utils::parse_rng_from_options(opts)) {
-
 		this->use_preferred = preferred_operator_heuristics.size() > 0;
 
-
-		// else prefusage == DO_NOTHING
-		struct timeval time;
-		gettimeofday(&time,NULL);
-
-		// microsecond has 1 000 000
-		// Assuming you did not need quite that accuracy
-		// Also do not assume the system clock has that accuracy.
-		unsigned int seed = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-		srand(seed);
+		// struct timeval time;
+		// gettimeofday(&time,NULL);
+		// // microsecond has 1 000 000
+		// // Assuming you did not need quite that accuracy
+		// // Also do not assume the system clock has that accuracy.
+		// unsigned int seed = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+		// srand(seed);
 
 		utils::g_log << "----" << endl;
 		utils::g_log << "--------" << endl;
@@ -60,7 +50,7 @@ namespace pure_rrw_fp {
 		utils::g_log << "----------------" << endl;
 		utils::g_log << "--------" << endl;
 		utils::g_log << "----" << endl;
-		utils::g_log << "srand-SEED: " << seed << endl;
+		utils::g_log << "rng-random_seed: " << opts.get<int>("random_seed") << endl;
 		utils::g_log << "Prob (as double) = " << prob << endl;
 		utils::g_log << "Pref_Prob (as double) = " << probability_preferred << endl;
 	}
@@ -104,8 +94,7 @@ namespace pure_rrw_fp {
 		statistics.inc_expanded();
 		statistics.inc_generated_ops(ops.size());
 		// Randomize ops
-		std::random_shuffle(ops.begin(), ops.end());
-		// ops.shuffle(*rng);
+		rng->shuffle(ops);
 		return ops;
 	}
 
@@ -191,8 +180,7 @@ namespace pure_rrw_fp {
 		}
 
 		// Randomize ops
-		std::random_shuffle(ops.begin(), ops.end());
-		// ops.shuffle(*rng);
+		rng->shuffle(ops);
 		return ops;
 	}
 
@@ -343,7 +331,6 @@ namespace pure_rrw_fp {
 				"[]");
 		parser.add_option<double>("prob", "fixed probability rate [0,1]", "0");
 		parser.add_option<double>("pref_prob", "currently, not used. probability of selecting a preferred operator in local minima (to create distributions. 0 means zero probability of selecting a preferred operator. -1 means do not add any bias (treat pref and unpref the same). Valid input is [0,1])", "-1");
-		parser.add_option<int>("runs", "number of execution to sample randomness over", "1");
 		utils::add_rng_options(parser);
 
 		SearchEngine::add_options_to_parser(parser);

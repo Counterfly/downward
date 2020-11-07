@@ -17,7 +17,6 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include "stdlib.h" //for rand() and RAND_MAX
 
 
 namespace options {
@@ -88,6 +87,7 @@ namespace pure_rrw_scaled {
 
         utils::CountdownTimer* timer;
     protected:
+        std::shared_ptr<utils::RandomNumberGenerator> rng;
         virtual void initialize() override;
         virtual SearchStatus step() override;
         double get_probability() const {
