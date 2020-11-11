@@ -143,9 +143,8 @@ namespace pure_rrw_fp {
 			}
 			else {
 				// Both operator types exist, randomly choose between the two sets
-				//int r = (rand() % 100);
-				double r = this->get_probability();
-				//utils::g_log << "randomed...." << r << endl;
+				double r = (*rng)();
+				// utils::g_log << "randomed...." << r << endl;
 				if (r < probability_preferred) {
 					// utils::g_log << "randoming among preferred" << endl;
 					for (int op_id : pref_op_ids) {
@@ -243,7 +242,7 @@ namespace pure_rrw_fp {
 				* The behaviour for scaling is to go to depth 'scaling_factor' with probability 1, then for each
 				* expansion thereafter, restart with probability 'prob'
 				*/
-				double random_value = this->get_probability();	// Map values to probabilities
+				double random_value = (*rng)();	// Map values to probabilities
 				if (random_value < prob) {
 					// Restart!
 					//utils::g_log << "restarting with length " << plan.size() << " and factor = " << this->scaling_factor << endl;
@@ -265,7 +264,8 @@ namespace pure_rrw_fp {
 				eval_context = current_eval_context;
 			}
 			else {
-				OperatorID random_op_id = ops.at(rand() % ops.size());
+				int random_op_id_index = (*rng)(ops.size());
+				OperatorID random_op_id = ops.at(random_op_id_index);
 				OperatorProxy random_op = task_proxy.get_operators()[random_op_id];
 				GlobalState state = state_registry.get_successor_state(eval_context.get_state(), random_op);
 

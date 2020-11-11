@@ -166,7 +166,8 @@ SearchStatus PureRW::ehc() {
 			//eval_context = current_eval_context;
 		}
 		else {
-			int random_op_id = rand() % ops.size();
+			int random_op_id = (*rng)(ops.size());
+			// utils::g_log << "Randomly selected operator with index = " << random_op_id << endl;
 			OperatorProxy random_op = task_proxy.get_operators()[random_op_id];
 			GlobalState state = state_registry.get_successor_state(eval_context.get_state(), random_op);
 

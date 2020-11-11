@@ -90,9 +90,6 @@ namespace pure_rrw_scaled {
         std::shared_ptr<utils::RandomNumberGenerator> rng;
         virtual void initialize() override;
         virtual SearchStatus step() override;
-        double get_probability() const {
-            return (double)rand() / (double)RAND_MAX;
-        }
 
         // So that we can extract proper plan.
         //  ow, using the parent pointer won't work for RWs as a state may be revisited and create an inf loop

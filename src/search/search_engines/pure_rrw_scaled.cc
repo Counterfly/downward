@@ -142,8 +142,7 @@ namespace pure_rrw_scaled {
 				}
 				else {
 					// Both operator types exist, randomly choose between the two sets
-					//int r = (rand() % 100);
-					double r = this->get_probability();
+					double r = (*rng)();
 					//utils::g_log << "randomed...." << r << endl;
 					if (r < probability_preferred) {
 						//utils::g_log << "randoming among preferred" << endl;
@@ -273,7 +272,8 @@ namespace pure_rrw_scaled {
 					plan.clear(); // TODO: this wasn't in old
 				}
 				else {
-					OperatorID random_op_id = ops.at(rand() % ops.size());
+					int random_op_id_index = (*rng)(ops.size());
+					OperatorID random_op_id = ops.at(random_op_id_index);
 					OperatorProxy random_op = task_proxy.get_operators()[random_op_id];
 
 					GlobalState state = state_registry.get_successor_state(eval_context.get_state(), random_op);

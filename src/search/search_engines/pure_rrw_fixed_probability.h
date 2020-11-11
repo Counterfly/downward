@@ -18,7 +18,6 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include "stdlib.h" //for rand() and RAND_MAX
 
 namespace options {
 class OptionParser;
@@ -90,9 +89,6 @@ namespace pure_rrw_fp {
         std::shared_ptr<utils::RandomNumberGenerator> rng;
         virtual void initialize() override;
         virtual SearchStatus step() override;
-        double get_probability() const {
-            return (double)rand() / (double)RAND_MAX;
-        }
 
         // So that we can extract proper plan.
         //  ow, using the parent pointer won't work for RWs as a state may be revisited and create an inf loop
