@@ -1,6 +1,7 @@
 #ifndef PURE_RW_H
 #define PURE_RW_H
 
+#include "../algorithms/ordered_set.h"
 #include "../evaluation_context.h"
 #include "../search_engine.h"
 #include "../search_statistics.h"
@@ -57,8 +58,6 @@ inline std::ostream& operator<<(std::ostream& out, const PreferredUsage value){
 */
 namespace pure_rw {
     class PureRW : public SearchEngine {
-        std::vector<OperatorID> get_successors(
-            EvaluationContext &eval_context);
         std::vector<OperatorID> get_biased_successors(
             EvaluationContext &eval_context);	// Used only in RW section
         void expand(EvaluationContext &eval_context, int d);
@@ -93,9 +92,6 @@ namespace pure_rw {
         virtual void search() override;
 
         virtual void save_plan_if_necessary() override;
-
-    private:
-        long luby_sequence(long sequence_number);
     };
     
 extern void add_options_to_parser(options::OptionParser &parser);

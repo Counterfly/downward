@@ -4,7 +4,6 @@
 #include "../plugin.h"
 
 #include "../evaluators/const_evaluator.h"
-#include "../evaluators/g_evaluator.h"
 #include "../evaluators/pref_evaluator.h"
 #include "../operator_id.h"
 #include "../algorithms/ordered_set.h"
@@ -66,29 +65,12 @@ void PureRW::initialize() {
     utils::g_log << "finitial initialize, current_Eval_context.id = " << current_eval_context.get_state().get_id() << endl;
 }
 
-vector<OperatorID> PureRW::get_successors(
-    EvaluationContext &eval_context) {
-    vector<OperatorID> ops;
-	successor_generator.generate_applicable_ops(eval_context.get_state(), ops);
-    statistics.inc_expanded();
-    statistics.inc_generated_ops(ops.size());
-    // Randomize ops
-	rng->shuffle(ops);
-    return ops;
-}
-
-
 vector<OperatorID> PureRW::get_biased_successors(
     EvaluationContext &eval_context) {
 	vector<OperatorID> ops;
 	// g_successor_generator->generate_applicable_ops(eval_context.get_state(), ops);
 	successor_generator.generate_applicable_ops(eval_context.get_state(), ops);
 
-    statistics.inc_expanded();
-    statistics.inc_generated_ops(ops.size());
-
-    // Randomize ops
-    rng->shuffle(ops);
     return ops;
 }
 
@@ -121,10 +103,8 @@ void PureRW::search() {
 		}
 	}
 
-	// utils::g_log << "Actual search time: " << *timer << " [t=" << g_timer << "]" << endl;
 	utils::g_log << "Actual search time: " << timer->get_elapsed_time() << endl;
 	delete timer;
-
 
 	current_eval_context = EvaluationContext(state_registry.get_initial_state(), &statistics);
 }
@@ -177,10 +157,11 @@ SearchStatus PureRW::ehc() {
 			statistics.inc_evaluated_states();	// Evaluating random state
 			statistics.inc_expanded();	// Expanding current state
 			statistics.inc_generated();	// Only generating one (random) state
+			statistics.inc_expanded();
+    		statistics.inc_generated_ops(ops.size());
 			// should inc_expanded_states() or inc_generated_states()?
 
 			plan.push_back(ops[random_op_id]);
-			utils::g_log << "ops size,id = " << ops.size() << "," << random_op_id << "  new state: " << eval_context.get_state().get_id() << "plan length=" << plan.size() << endl;
 		}
 	}
 
@@ -202,20 +183,6 @@ SearchStatus PureRW::ehc() {
     return SOLVED;
     //utils::g_log << "No solution - FAILED" << endl;
     //return FAILED;
-}
-
-long PureRW::luby_sequence(long sequence_number) {
-	long focus = 2L;
-	while (sequence_number > (focus - 1)) {
-		focus = focus << 1;
-	}
-
-	if (sequence_number == (focus - 1)) {
-		return focus >> 1;
-	}
-	else {
-		return luby_sequence(sequence_number - (focus >> 1) + 1);
-	}
 }
 
 void PureRW::print_statistics() const {
