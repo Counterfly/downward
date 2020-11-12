@@ -4,12 +4,20 @@
 #include "../per_task_information.h"
 
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 class GlobalState;
 class OperatorID;
+namespace utils {
+    namespace operator_id_hasher {
+        struct OperatorIDHasher;
+    }
+};
 class State;
 class TaskProxy;
+class Evaluator;
+class EvaluationContext;
 
 namespace successor_generator {
 class GeneratorBase;
@@ -31,6 +39,14 @@ public:
     // Transitional method, used until the search is switched to the new task interface.
     void generate_applicable_ops(
         const GlobalState &state, std::vector<OperatorID> &applicable_ops) const;
+
+    // generates two sets (preferred and non-preferred) operators
+    void get_partitioned_operators(
+        EvaluationContext &eval_context,
+        const std::vector<std::shared_ptr<Evaluator>> &preferred_operator_evaluators,
+        std::unordered_set<OperatorID, utils::operator_id_hasher::OperatorIDHasher> &preferred_ops,
+        std::unordered_set<OperatorID, utils::operator_id_hasher::OperatorIDHasher> &non_preferred_ops);
+    
 };
 
 extern PerTaskInformation<SuccessorGenerator> g_successor_generators;
