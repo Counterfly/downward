@@ -59,10 +59,9 @@ inline std::ostream& operator<<(std::ostream& out, const PreferredUsage value){
 */
 namespace pure_rrw_fp {
     class PureRRWFixedProb : public SearchEngine {
-        std::vector<OperatorID> get_successors(
-            EvaluationContext &eval_context);
-        std::vector<OperatorID> get_biased_successors(
-            EvaluationContext &eval_context);	// Used only in RW section
+        void get_biased_successors(
+            EvaluationContext &eval_context,
+            std::vector<OperatorID> &ops) const;	// Used only in RW section
         void expand(EvaluationContext &eval_context, int d);
         void reach_state(
             const GlobalState &parent, const OperatorID &op,
@@ -71,14 +70,13 @@ namespace pure_rrw_fp {
 
         std::shared_ptr<Evaluator> scaling_heuristic;
         unsigned int scaling_factor;
-        std::vector<std::shared_ptr<Evaluator>> preferred_operator_heuristics;
+        std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
         bool use_preferred;
 
         double prob;	                // [0,1], fixed probability restart rate
         double probability_preferred;   // Probability of selecting a preferred operator in successor generation (to create non-uniform distributions)
 
         EvaluationContext current_eval_context;
-        Plan plan;
 
         // Statistics
         std::map<int, std::pair<int, int>> d_counts;

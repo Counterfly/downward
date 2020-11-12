@@ -4,11 +4,11 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../algorithms/ordered_set.h"
 #include "../evaluators/const_evaluator.h"
 #include "../evaluators/g_evaluator.h"
 #include "../evaluators/pref_evaluator.h"
 #include "../operator_id.h"
-#include "../algorithms/ordered_set.h"
 #include "../task_utils/successor_generator.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/logging.h"
@@ -26,22 +26,13 @@ namespace pure_rrw_fp {
 		: SearchEngine(opts),
 		scaling_heuristic(opts.get<shared_ptr<Evaluator>>("scaling_heuristic")),
 		scaling_factor(0),
-		preferred_operator_heuristics(opts.get_list<shared_ptr<Evaluator>>("preferred")),
+		preferred_operator_evaluators(opts.get_list<shared_ptr<Evaluator>>("preferred")),
 		prob(opts.get<double>("prob")),
 		probability_preferred(opts.get<double>("pref_prob")),
 		current_eval_context(state_registry.get_initial_state(), &statistics),
-		plan(),
 		last_num_expanded(-1),
       	rng(utils::parse_rng_from_options(opts)) {
-		this->use_preferred = preferred_operator_heuristics.size() > 0;
-
-		// struct timeval time;
-		// gettimeofday(&time,NULL);
-		// // microsecond has 1 000 000
-		// // Assuming you did not need quite that accuracy
-		// // Also do not assume the system clock has that accuracy.
-		// unsigned int seed = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-		// srand(seed);
+		this->use_preferred = preferred_operator_evaluators.size() > 0;
 
 		utils::g_log << "----" << endl;
 		utils::g_log << "--------" << endl;
@@ -87,101 +78,53 @@ namespace pure_rrw_fp {
 		assert(this->scaling_factor > 0);
 	}
 
-	vector<OperatorID> PureRRWFixedProb::get_successors(
-		EvaluationContext &eval_context) {
-		vector<OperatorID> ops;
-		successor_generator.generate_applicable_ops(eval_context.get_state(), ops);
-		statistics.inc_expanded();
-		statistics.inc_generated_ops(ops.size());
-		// Randomize ops
-		rng->shuffle(ops);
-		return ops;
-	}
+void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, vector<OperatorID> &ops) const {
+	unordered_set<OperatorID, utils::operator_id_hasher::OperatorIDHasher> pref_ops;
+    unordered_set<OperatorID, utils::operator_id_hasher::OperatorIDHasher> non_pref_ops;
+    // if there are no preferred_operator_evaluators 
+    // then pref_ops will be empty, and non_pref_ops should contain ops
+    successor_generator.get_partitioned_operators(
+        eval_context,
+        preferred_operator_evaluators,
+        pref_ops,
+        non_pref_ops
+    );
+	// utils::g_log << "Pref Ops.size v Non-Pref Ops.size: " << pref_ops.size() << " v " << non_pref_ops.size() << endl;
 
+    // favouring to update stats after random number is generated (and now outside of this function bc of an old const battle)
+    // b/c, in theory, we wouldn't need to generate the unselected operator set
+    // statistics.inc_expanded();
+    // statistics.inc_generated_ops(pref_ops.size() + non_pref_ops.size());
+    if (use_preferred && probability_preferred > 0 && pref_ops.size() > 0) {
+        // Both operator types exist, randomly choose between the two sets
+        double r = (*rng)();
+        // utils::g_log << "randomed...." << r << endl;
+        if (r < probability_preferred) {
+            // utils::g_log << "randoming among preferred" << endl;
+            for (OperatorID op : pref_ops) {
+                ops.push_back(op);
+            }
+        }
+        else {
+            // utils::g_log << "randoming among non_pref" << endl;
+            for (OperatorID op : non_pref_ops) {
+                ops.push_back(op);
+            }
+        }
+    }
+    else {
+        for (OperatorID op : pref_ops) {
+            ops.push_back(op);
+        }
+        for (OperatorID op : non_pref_ops) {
+            ops.push_back(op);
+        }
+        // utils::g_log << "randoming among both pref and non-pref ops with ops.size = " << ops.size() << endl;
+    }
 
-	vector<OperatorID> PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context) {
-		vector<OperatorID> ops;
-		successor_generator.generate_applicable_ops(eval_context.get_state(), ops);
-
-		std::unordered_set<int> pref_op_ids;
-		if (use_preferred) {
-			for (shared_ptr<Evaluator> pref_heuristic : preferred_operator_heuristics) {
-				const vector<OperatorID> &pref_ops1 = eval_context.get_preferred_operators(pref_heuristic.get());
-				//utils::g_log << "pref heur = " << pref_heuristic->get_description() << " num pref ops = " << pref_ops1.size() << endl;
-				for (OperatorID op : pref_ops1) {
-					pref_op_ids.insert(op.get_index());
-				}
-			}
-		}
-
-		std::unordered_set<int> non_pref_op_ids;
-		for (OperatorID op : ops) {
-			int index = op.get_index();
-			if (pref_op_ids.find(index) == pref_op_ids.end()) {
-				non_pref_op_ids.insert(index);
-			}
-		}
-
-		statistics.inc_expanded();
-		statistics.inc_generated_ops(ops.size());
-
-		if (probability_preferred != -1) {
-			ops.clear();
-
-			// Before doing randomization, see if one list is empty which forces deterministic choice
-			if (pref_op_ids.size() == 0) {
-				//utils::g_log << "Pref Operators is empty" << endl;
-				for (int op_id : non_pref_op_ids) {
-					ops.push_back(OperatorID(op_id));
-				}
-			}
-			else if (non_pref_op_ids.size() == 0) {
-				//utils::g_log << "NonPref Operators is empty" << endl;
-				for (int op_id : pref_op_ids) {
-					ops.push_back(OperatorID(op_id));
-				}
-			}
-			else {
-				// Both operator types exist, randomly choose between the two sets
-				double r = (*rng)();
-				// utils::g_log << "randomed...." << r << endl;
-				if (r < probability_preferred) {
-					// utils::g_log << "randoming among preferred" << endl;
-					for (int op_id : pref_op_ids) {
-						ops.push_back(OperatorID(op_id));
-					}
-				}
-				else {
-					//utils::g_log << "randoming among non_pref" << endl;
-					for (int op_id : non_pref_op_ids) {
-						ops.push_back(OperatorID(op_id));
-					}
-				}
-			}
-			/*
-			// Bias operators for appropriate distribution
-			ops.clear();
-
-			for (int i = 0; i < this->instances_non_preferred; ++i){
-				for (const GlobalOperator * op : non_pref_ops) {
-					ops.push_back(op);
-				}
-			}
-			utils::g_log << "instances-non-pref = " << this->instances_non_preferred << ", num non-pref ops = " << non_pref_ops.size() << ", ops size = " << ops.size() << endl;
-
-			for (int i = 0; i < this->instances_preferred; ++i){
-				for (const GlobalOperator * op : pref_ops) {
-					ops.push_back(op);
-				}
-			}
-			*/
-			//utils::g_log << "num pref ops = " << pref_ops.size() << ", new ops size = " << ops.size() << endl;
-		}
-
-		// Randomize ops
-		rng->shuffle(ops);
-		return ops;
-	}
+    // Randomize ops
+    // ops.shuffle(*rng); -- this didn't work
+}
 
 	void PureRRWFixedProb::expand(EvaluationContext &eval_context, int d) {
 		UNUSED(eval_context);
@@ -257,13 +200,15 @@ namespace pure_rrw_fp {
 				return TIMEOUT;
 			}
 			//utils::g_log << eval_context.get_state().get_id() << " -> " << endl;
-			vector<OperatorID> ops = get_biased_successors(eval_context);
+			vector<OperatorID> ops;
+			get_biased_successors(eval_context, ops);
 			if (ops.size() == 0) {
 				utils::g_log << "Pruned all operators -- forcing early restart" << endl;
 				//exit_with(EXIT_UNSOLVED_INCOMPLETE);
 				eval_context = current_eval_context;
 			}
 			else {
+				// randomly select op
 				int random_op_id_index = (*rng)(ops.size());
 				OperatorID random_op_id = ops.at(random_op_id_index);
 				OperatorProxy random_op = task_proxy.get_operators()[random_op_id];
@@ -275,6 +220,7 @@ namespace pure_rrw_fp {
 				statistics.inc_evaluated_states();	// Evaluating random state
 				statistics.inc_expanded();	// Expanding current state
 				statistics.inc_generated();	// Only generating one (random) state
+				statistics.inc_generated_ops(ops.size());
 				// should inc_expanded_states() or inc_generated_states()?
 
 				plan.push_back(random_op_id);
@@ -285,20 +231,6 @@ namespace pure_rrw_fp {
 		return SOLVED;
 		//utils::g_log << "No solution - FAILED" << endl;
 		//return FAILED;
-	}
-
-	long PureRRWFixedProb::luby_sequence(long sequence_number) {
-		long focus = 2L;
-		while (sequence_number > (focus - 1)) {
-			focus = focus << 1;
-		}
-
-		if (sequence_number == (focus - 1)) {
-			return focus >> 1;
-		}
-		else {
-			return luby_sequence(sequence_number - (focus >> 1) + 1);
-		}
 	}
 
 	void PureRRWFixedProb::print_statistics() const {
