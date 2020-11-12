@@ -78,7 +78,7 @@ namespace pure_rrw_fp {
 		assert(this->scaling_factor > 0);
 	}
 
-void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, vector<OperatorID> &ops) const {
+void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, ordered_set::OrderedSet<OperatorID> &ops) const {
 	unordered_set<OperatorID, utils::operator_id_hasher::OperatorIDHasher> pref_ops;
     unordered_set<OperatorID, utils::operator_id_hasher::OperatorIDHasher> non_pref_ops;
     // if there are no preferred_operator_evaluators 
@@ -102,22 +102,22 @@ void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, ve
         if (r < probability_preferred) {
             // utils::g_log << "randoming among preferred" << endl;
             for (OperatorID op : pref_ops) {
-                ops.push_back(op);
+                ops.insert(op);
             }
         }
         else {
             // utils::g_log << "randoming among non_pref" << endl;
             for (OperatorID op : non_pref_ops) {
-                ops.push_back(op);
+                ops.insert(op);
             }
         }
     }
     else {
         for (OperatorID op : pref_ops) {
-            ops.push_back(op);
+            ops.insert(op);
         }
         for (OperatorID op : non_pref_ops) {
-            ops.push_back(op);
+            ops.insert(op);
         }
         // utils::g_log << "randoming among both pref and non-pref ops with ops.size = " << ops.size() << endl;
     }
@@ -200,7 +200,7 @@ void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, ve
 				return TIMEOUT;
 			}
 			//utils::g_log << eval_context.get_state().get_id() << " -> " << endl;
-			vector<OperatorID> ops;
+			ordered_set::OrderedSet<OperatorID> ops;
 			get_biased_successors(eval_context, ops);
 			if (ops.size() == 0) {
 				utils::g_log << "Pruned all operators -- forcing early restart" << endl;
@@ -210,7 +210,7 @@ void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, ve
 			else {
 				// randomly select op
 				int random_op_id_index = (*rng)(ops.size());
-				OperatorID random_op_id = ops.at(random_op_id_index);
+				OperatorID random_op_id = ops[random_op_id_index];
 				OperatorProxy random_op = task_proxy.get_operators()[random_op_id];
 				GlobalState state = state_registry.get_successor_state(eval_context.get_state(), random_op);
 

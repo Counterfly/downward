@@ -61,7 +61,7 @@ namespace pure_rrw_fp {
     class PureRRWFixedProb : public SearchEngine {
         void get_biased_successors(
             EvaluationContext &eval_context,
-            std::vector<OperatorID> &ops) const;	// Used only in RW section
+            ordered_set::OrderedSet<OperatorID> &ops) const;	// Used only in RW section
         void expand(EvaluationContext &eval_context, int d);
         void reach_state(
             const GlobalState &parent, const OperatorID &op,
