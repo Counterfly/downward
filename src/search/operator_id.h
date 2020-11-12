@@ -56,6 +56,12 @@ namespace utils {
 inline void feed(HashState &hash_state, OperatorID id) {
     feed(hash_state, id.hash());
 }
+
+namespace operator_id_hasher {
+struct OperatorIDHasher {
+    std::size_t operator()(const OperatorID &id) const { return id.hash(); }
+};
+}
 }
 
 #endif

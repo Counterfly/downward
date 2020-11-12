@@ -24,7 +24,6 @@ class OptionParser;
 class Options;
 }
 class RestartStrategy;
-// class ConstEvaluatorM;
 
 typedef std::pair<StateID, std::pair<int, const OperatorID *>> OpenListEntryEHC;
 
@@ -60,10 +59,11 @@ inline std::ostream& operator<<(std::ostream& out, const PreferredUsage value){
 */
 namespace pure_rrw_scaled {
     class PureRRWScaled : public SearchEngine {
-        std::vector<OperatorID> get_successors(
-            EvaluationContext &eval_context);
-        std::vector<OperatorID> get_biased_successors(
-            EvaluationContext &eval_context);	// Used only in RW section
+	    // must be ordered so randomizing has affect
+        void get_biased_successors(
+            EvaluationContext &eval_context,
+            ordered_set::OrderedSet<OperatorID> &ops) const;	// Used only in RW section
+
         void expand(EvaluationContext &eval_context, int d);
         void reach_state(
             const GlobalState &parent, const OperatorID &op,
@@ -72,14 +72,13 @@ namespace pure_rrw_scaled {
 
         std::shared_ptr<Evaluator> initial_heuristic;
         int initial_heuristic_value; //unsigned?
-        std::vector<std::shared_ptr<Evaluator>> preferred_operator_heuristics;
+        std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
         bool use_preferred;
 
         std::shared_ptr<RestartStrategy> restart_strategy;
         double probability_preferred;		// Probability of selecting a preferred operator in successor generation (to create non-uniform distributions)
 
         EvaluationContext current_eval_context;
-        Plan plan;
 
         // Statistics
         std::map<int, std::pair<int, int>> d_counts;

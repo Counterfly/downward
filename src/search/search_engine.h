@@ -50,7 +50,7 @@ protected:
 
     PlanManager plan_manager;
     StateRegistry state_registry;
-    const successor_generator::SuccessorGenerator &successor_generator;
+    successor_generator::SuccessorGenerator &successor_generator;
     SearchSpace search_space;
     SearchProgress search_progress;
     SearchStatistics statistics;
