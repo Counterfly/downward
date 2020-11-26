@@ -62,7 +62,7 @@ void PureRW::initialize() {
 
     SearchNode node = search_space.get_node(current_eval_context.get_state());
     node.open_initial();
-    utils::g_log << "finitial initialize, current_Eval_context.id = " << current_eval_context.get_state().get_id() << endl;
+    // utils::g_log << "finished initialize, current_Eval_context.id = " << current_eval_context.get_state().get_id() << endl;
 }
 
 vector<OperatorID> PureRW::get_biased_successors(
@@ -142,6 +142,7 @@ SearchStatus PureRW::ehc() {
 		// vector<OperatorID> ops;
 		if (ops.size() == 0) {
 			utils::g_log << "Pruned all operators -- exiting and marking as unsolvable" << endl;
+			plan.clear();
 			return FAILED;
 			//eval_context = current_eval_context;
 		}
