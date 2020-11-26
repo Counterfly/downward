@@ -32,6 +32,7 @@ namespace pure_rrw_scaled {
 		preferred_operator_evaluators(opts.get_list<shared_ptr<Evaluator>>("preferred")),
 		restart_strategy(opts.get<shared_ptr<RestartStrategy>>("restart")),
 		probability_preferred(opts.get<double>("pref_prob")),
+		num_restarts(0),
 		current_eval_context(state_registry.get_initial_state(), &statistics),
 		last_num_expanded(-1),
       	rng(utils::parse_rng_from_options(opts)) {
@@ -73,6 +74,7 @@ namespace pure_rrw_scaled {
 		solution_found = false;
 		plan.clear();
 		d_counts.clear();
+		num_restarts = 0;
 
 		SearchNode node = search_space.get_node(current_eval_context.get_state());
 		node.open_initial();
@@ -187,10 +189,12 @@ SearchStatus PureRRWScaled::ehc() {
 	uint64_t MAX_TIMESTEP = 1;
 	MAX_TIMESTEP <<= 63;
 
+	num_restarts = -1;
 	while (!check_goal_and_set_plan(eval_context.get_state()))
 	{
 
 		uint64_t restart_length = restart_strategy->next_sequence_value();
+		++num_restarts;
 		// utils::g_log << "restart length = " << restart_length << ", " << endl;
 		if (restart_length < (MAX_TIMESTEP / initial_heuristic_value)) {
 			restart_length = restart_length * initial_heuristic_value;
@@ -222,6 +226,7 @@ SearchStatus PureRRWScaled::ehc() {
 				utils::g_log << "Pruned all operators -- resetting current state to EHC root" << endl;
 				eval_context = current_eval_context;
 				plan.clear(); // TODO: this wasn't in old
+				// this is a pseudo restart, could increment `num_restarts` but will not
 			}
 			else {
 				// randomly select op
@@ -234,7 +239,7 @@ SearchStatus PureRRWScaled::ehc() {
 				//reach_state(eval_context.get_state(), random_op, state);
 
 				eval_context = EvaluationContext(state, &statistics);	// Eval Context of successor
-				statistics.inc_evaluated_states();	// Evaluating random state
+				// statistics.inc_evaluated_states();	// Evaluating random state
 				statistics.inc_expanded();	// Expanding current state
 				statistics.inc_generated();	// Only generating one (random) state
 				statistics.inc_generated_ops(ops.size());
@@ -254,6 +259,7 @@ SearchStatus PureRRWScaled::ehc() {
 void PureRRWScaled::print_statistics() const {
 	statistics.print_detailed_statistics();
 	utils::g_log << "Termination Status: " << search_status::getStringFromSearchStatus(status) << "." << endl;
+	utils::g_log << "Number of Restarts: " << num_restarts << "." << endl;
 
 	// utils::g_log << "For last execution: " << endl;
 	for (auto count : d_counts) {

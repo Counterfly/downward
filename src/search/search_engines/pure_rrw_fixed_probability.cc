@@ -27,8 +27,9 @@ namespace pure_rrw_fp {
 		scaling_heuristic(opts.get<shared_ptr<Evaluator>>("scaling_heuristic")),
 		scaling_factor(0),
 		preferred_operator_evaluators(opts.get_list<shared_ptr<Evaluator>>("preferred")),
-		prob(opts.get<double>("prob")),
+		restart_probability(opts.get<double>("prob")),
 		probability_preferred(opts.get<double>("pref_prob")),
+    	num_restarts(0),
 		current_eval_context(state_registry.get_initial_state(), &statistics),
 		last_num_expanded(-1),
       	rng(utils::parse_rng_from_options(opts)) {
@@ -42,8 +43,9 @@ namespace pure_rrw_fp {
 		utils::g_log << "--------" << endl;
 		utils::g_log << "----" << endl;
 		utils::g_log << "rng-random_seed: " << opts.get<int>("random_seed") << endl;
-		utils::g_log << "Prob (as double) = " << prob << endl;
 		utils::g_log << "Pref_Prob (as double) = " << probability_preferred << endl;
+    	utils::g_log << "Use Preferred =  " << use_preferred << endl;
+    	utils::g_log << "Restart_Prob (as double) = " << restart_probability << endl;
 	}
 
 	PureRRWFixedProb::~PureRRWFixedProb() {
@@ -70,6 +72,7 @@ namespace pure_rrw_fp {
 		solution_found = false;
 		plan.clear();
 		d_counts.clear();
+    	num_restarts = 0;
 
 		SearchNode node = search_space.get_node(current_eval_context.get_state());
 		node.open_initial();
@@ -183,14 +186,15 @@ void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, or
 			if (plan.size() >= this->scaling_factor) {
 				/*
 				* The behaviour for scaling is to go to depth 'scaling_factor' with probability 1, then for each
-				* expansion thereafter, restart with probability 'prob'
+				* expansion thereafter, restart with probability 'restart_probability'
 				*/
 				double random_value = (*rng)();	// Map values to probabilities
-				if (random_value < prob) {
+				if (random_value < restart_probability) {
 					// Restart!
 					//utils::g_log << "restarting with length " << plan.size() << " and factor = " << this->scaling_factor << endl;
 					eval_context = current_eval_context;
 					plan.clear();
+            		++num_restarts;
 				}
 			}
 
@@ -217,7 +221,7 @@ void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, or
 				//reach_state(eval_context.get_state(), *random_op, state);
 
 				eval_context = EvaluationContext(state, &statistics);	// Eval Context of successor
-				statistics.inc_evaluated_states();	// Evaluating random state
+				// statistics.inc_evaluated_states();	// Evaluating random state
 				statistics.inc_expanded();	// Expanding current state
 				statistics.inc_generated();	// Only generating one (random) state
 				statistics.inc_generated_ops(ops.size());
@@ -236,6 +240,7 @@ void PureRRWFixedProb::get_biased_successors(EvaluationContext &eval_context, or
 	void PureRRWFixedProb::print_statistics() const {
 		statistics.print_detailed_statistics();
 		utils::g_log << "Termination Status: " << search_status::getStringFromSearchStatus(status) << "." << endl;
+		utils::g_log << "Number of Restarts: " << num_restarts << "." << endl;
 
 		// utils::g_log << "For last execution: " << endl;
 		// for (auto count : d_counts) {

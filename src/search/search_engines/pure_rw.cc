@@ -154,10 +154,9 @@ SearchStatus PureRW::ehc() {
 			//reach_state(eval_context.get_state(), *random_op, state);
 
 			eval_context = EvaluationContext(state, &statistics);	// Eval Context of successor
-			statistics.inc_evaluated_states();	// Evaluating random state
+			// statistics.inc_evaluated_states();	// Evaluating random state
 			statistics.inc_expanded();	// Expanding current state
 			statistics.inc_generated();	// Only generating one (random) state
-			statistics.inc_expanded();
     		statistics.inc_generated_ops(ops.size());
 			// should inc_expanded_states() or inc_generated_states()?
 

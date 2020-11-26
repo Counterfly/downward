@@ -77,6 +77,7 @@ namespace pure_rrw_scaled {
 
         std::shared_ptr<RestartStrategy> restart_strategy;
         double probability_preferred;		// Probability of selecting a preferred operator in successor generation (to create non-uniform distributions)
+        int num_restarts;
 
         EvaluationContext current_eval_context;
 

@@ -73,8 +73,9 @@ namespace pure_rrw_fp {
         std::vector<std::shared_ptr<Evaluator>> preferred_operator_evaluators;
         bool use_preferred;
 
-        double prob;	                // [0,1], fixed probability restart rate
+        double restart_probability;     // [0,1], fixed probability restart rate
         double probability_preferred;   // Probability of selecting a preferred operator in successor generation (to create non-uniform distributions)
+        int num_restarts;
 
         EvaluationContext current_eval_context;
 
