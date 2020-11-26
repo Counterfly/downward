@@ -772,7 +772,7 @@ fast_downward_plugin(
 )
 
 
-####### MINE #########
+####### BEGIN MINE #########
 #fast_downward_plugin(
 #    NAME RESTART_STRATEGY
 #    HELP "restarts"
@@ -815,7 +815,23 @@ fast_downward_plugin(
         search_engines/pure_rrw_scaled
     DEPENDS EVALUATORS_PLUGIN_GROUP EXP_RESTART_STRATEGY LUBY_RESTART_STRATEGY
 )
-####### MINE #########
+
+fast_downward_plugin(
+    NAME EHC_RRW
+    HELP "EHC with RRW (using variable length restart strategies) in Uninformed Heuristic Regions"
+    SOURCES
+        search_engines/ehc_rrw
+    DEPENDS EVALUATORS_PLUGIN_GROUP EXP_RESTART_STRATEGY LUBY_RESTART_STRATEGY ENFORCED_HILL_CLIMBING_SEARCH
+)
+
+fast_downward_plugin(
+    NAME EHC_RRW_FP
+    HELP "EHC with RRW (using fixed probability-rate restart strategies) in Uninformed Heuristic Regions"
+    SOURCES
+        search_engines/ehc_rrw_fixed_probability
+    DEPENDS EVALUATORS_PLUGIN_GROUP ENFORCED_HILL_CLIMBING_SEARCH
+)
+####### END MINE #########
 
 fast_downward_add_plugin_sources(PLANNER_SOURCES)
 

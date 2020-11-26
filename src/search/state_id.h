@@ -17,12 +17,16 @@ class StateID {
 
     int value;
     explicit StateID(int value_)
+    // StateID(int value_)
         : value(value_) {
     }
 
     // No implementation to prevent default construction
-    StateID();
+    // StateID();
 public:
+    // For RW path reconstruction, need a default constructor
+    StateID() : value(-1) {
+    }
     ~StateID() {
     }
 
@@ -34,6 +38,14 @@ public:
 
     bool operator!=(const StateID &other) const {
         return !(*this == other);
+    }
+
+    bool operator<(const StateID &other) const {
+    	return value < other.value;
+    }
+
+    size_t hash() const {
+        return value;
     }
 };
 
